@@ -150,7 +150,7 @@ fn create_v_tunnel(y1: i32, y2: i32, x:i32, map: &mut Map){
     }
 }
 
-fn make_map() -> Map {
+fn make_map(player: &mut Object) -> Map {
     // blocked tiles filled
     let mut map = vec![vec![Tile::wall(); MAP_HEIGHT as usize]; MAP_WIDTH as usize];
 
@@ -176,7 +176,36 @@ fn make_map() -> Map {
 
             // going ahead and creating the room
 
-            create_room(new_room, &mut map)
+            create_room(new_room, &mut map);
+
+            // center coordinates of the room
+            let (new_x, new_y) = new_room.center();
+
+            if rooms.is_empty() {
+                // as this is the first room, player from the center of this room
+                player.x = new_x;
+                player.y = new_y;
+            }
+            else
+            {
+                // connect all the other rooms with a tunnel
+
+                let (prev_x, prev_y) = rooms[rooms.len()-1].center();
+
+                // randomize the tunnel generation
+
+                if rand::random(){
+                    // move horizontally and then vertically
+                    create_h_tunnel(prev_x, new_x, prev_y, &mut map);
+                    create_v_tunnel(prev_y, new_y, new_x, &mut map);
+                }
+                else {
+                    create_v_tunnel(prev_y, new_y, prev_x, &mut map);
+                    create_h_tunnel(prev_x, new_x, new_y, &mut map);
+                }
+            }
+
+            rooms.push(new_room);
         }
     }
 
@@ -263,7 +292,7 @@ fn main() {
     let mut tcod = Tcod { root , con };
 
     // create player
-    let player = Object::new(25, 23, '@', WHITE);
+    let player = Object::new(0, 0, '@', WHITE);
 
     // create an Non-player character
     let npc = Object::new(SCREEN_WIDTH/2 -5 , SCREEN_HEIGHT/2, '+', RED);
@@ -273,7 +302,7 @@ fn main() {
 
     let game = Game {
         // make the map - not rendered though
-        map: make_map(),
+        map: make_map(&mut objects[0]),
     };
 
     while !tcod.root.window_closed() {
